@@ -29,7 +29,6 @@ import java.util.Random;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.core.UriInfo;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
@@ -44,11 +43,9 @@ public class RestEndpoint1 {
     @Inject
     private OpenTelemetry otel;
 
-
     @GET
-    public String getString() {
+    public String method1() {
         final Span span = tracer.spanBuilder("Doing some work")
-//                .setParent(Context.current())
                 .startSpan();
 
         span.makeCurrent();
@@ -69,7 +66,6 @@ public class RestEndpoint1 {
 
     private void doSomeMoreWork() {
         final Span span = tracer.spanBuilder("Doing some more work")
-//                .setParent(Context.current())
                 .startSpan();
         span.makeCurrent();
         sleep();
@@ -79,17 +75,10 @@ public class RestEndpoint1 {
 
     private void doEvenMoreWork() {
         final Span span = tracer.spanBuilder("Doing even more work")
-//                .setParent(Context.current())
                 .startSpan();
         span.makeCurrent();
         sleep();
         span.end();
-    }
-
-    private HttpClient getClient() {
-        return HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_2)
-                .build();
     }
 
     private String sendRequest() {
@@ -106,7 +95,10 @@ public class RestEndpoint1 {
         otel.getPropagators().getTextMapPropagator().inject(Context.current(), builder, setter);
         final HttpRequest request = builder.build();
         try {
-            HttpResponse<String> response = getClient().send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_2)
+                    .build()
+                    .send(request, HttpResponse.BodyHandlers.ofString());
             return response.body();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -115,7 +107,7 @@ public class RestEndpoint1 {
 
     private void sleep() {
         try {
-            Thread.sleep(new Random().nextInt(4) * 1000 + 1);
+            Thread.sleep(new Random().nextInt(4) * 500 + 1);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

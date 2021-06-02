@@ -19,7 +19,6 @@
 
 package com.steeplesoft.otel.integration;
 
-import io.grpc.Context;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
 
@@ -30,19 +29,21 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class TracerProducer {
     @Inject
-    private OpenTelemetry otel;
-    private Object mutex = new Object();
-    private Tracer tracer;
+    private OpenTelemetry openTelemetry;
+    private volatile Tracer tracer;
 
     @Produces
     public Tracer getTracer() {
-        if (tracer == null) {
-            synchronized (mutex) {
-                if (tracer == null) {
-                    tracer = otel.getTracer("com.steeplesoft.otel", "1.0.0-SNAPSHOT");
+        Tracer localRef = tracer;
+        if (localRef == null) {
+            synchronized (this) {
+                localRef = tracer;
+                if (localRef == null) {
+                    tracer = localRef = openTelemetry.getTracer("com.steeplesoft.otel",
+                            "1.0.0-SNAPSHOT");
                 }
             }
         }
-        return tracer;
+        return localRef;
     }
 }

@@ -7,7 +7,7 @@ import java.util.Set;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
-import com.steeplesoft.otel.integration.OtelRequestFilter;
+import com.steeplesoft.otel.integration.OpenTelemetryFilter;
 
 @ApplicationPath("/api")
 public class Sevice2Application extends Application {
@@ -16,7 +16,7 @@ public class Sevice2Application extends Application {
         final Set<Class<?>> classes = new HashSet<>(1);
         Arrays.asList(RestEndpoint2.class,
 //                OtelProducer.class,
-                OtelRequestFilter.class
+                OpenTelemetryFilter.class
 //                TracerProducer.class
         ).forEach(classes::add);
         return classes;

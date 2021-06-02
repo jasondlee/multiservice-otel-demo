@@ -33,22 +33,25 @@ import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 
 @ApplicationScoped
-public class OtelRequestFilter implements ContainerRequestFilter, ContainerResponseFilter {
+public class OpenTelemetryFilter implements ContainerRequestFilter, ContainerResponseFilter {
     @Inject
-    private OpenTelemetry otel;
+    private OpenTelemetry openTelemetry;
     @Inject
     private Tracer tracer;
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
         System.out.println("In request filter...");
-        TextMapGetter<ContainerRequestContext> getter =
-                new TextMapGetter<>() {
+
+        Context extractedContext = openTelemetry.getPropagators()
+                .getTextMapPropagator()
+                .extract(Context.current(), requestContext, new TextMapGetter<>() {
                     @Override
                     public String get(ContainerRequestContext requestContext, String key) {
                         if (requestContext.getHeaders().containsKey(key)) {
@@ -61,11 +64,7 @@ public class OtelRequestFilter implements ContainerRequestFilter, ContainerRespo
                     public Iterable<String> keys(ContainerRequestContext requestContext) {
                         return requestContext.getHeaders().keySet();
                     }
-                };
-
-        Context extractedContext = otel.getPropagators()
-                .getTextMapPropagator()
-                .extract(Context.current(), requestContext, getter);
+                });
         final UriInfo uriInfo = requestContext.getUriInfo();
         final URI requestUri = uriInfo.getRequestUri();
         final String method = requestContext.getMethod();

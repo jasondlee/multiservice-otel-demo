@@ -19,7 +19,9 @@
 
 package com.steeplesoft.otel.integration;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Produces;
+
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
@@ -35,31 +37,26 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessorBuilder;
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-
 @ApplicationScoped
-public class OtelProducer {
-    @javax.annotation.Resource(lookup="java:module/ModuleName")
-    private String moduleName;
-
+public class OpenTelemetryProducer {
     @javax.annotation.Resource(lookup="java:app/AppName")
     private String applicationName;
 
-    private Object mutex = new Object();
-    private OpenTelemetry openTelemetry;
+    private volatile OpenTelemetry openTelemetry;
 
     @Produces
     public OpenTelemetry getOpenTelemetryInstance() {
-        if (openTelemetry == null) {
-            synchronized (mutex) {
-                if (openTelemetry == null) {
-                    openTelemetry = localBuild();
+        OpenTelemetry localRef = openTelemetry;
+        if (localRef == null) {
+            synchronized (this) {
+                localRef = openTelemetry;
+                if (localRef == null) {
+                    openTelemetry = localRef = localBuild();
                 }
             }
         }
 
-        return openTelemetry;
+        return localRef;
     }
 
     private OpenTelemetrySdk localBuild() {

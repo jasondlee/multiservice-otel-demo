@@ -34,13 +34,10 @@ import io.opentelemetry.api.trace.Tracer;
 public class RestEndpoint2 {
     @Inject
     private Tracer tracer;
-    @Inject
-    private OpenTelemetry otel;
 
     @GET
-    public String getString() {
+    public String method2() {
         final Span span = tracer.spanBuilder("In service 2 doing some work.")
-//                .setParent(Context.current())
                 .startSpan();
 
         span.makeCurrent();
@@ -54,7 +51,6 @@ public class RestEndpoint2 {
 
     private void doSomeMoreWork() {
         final Span span = tracer.spanBuilder("In Service 2, doing some more work")
-//                .setParent(Context.current())
                 .startSpan();
         span.makeCurrent();
         sleep();
@@ -63,7 +59,7 @@ public class RestEndpoint2 {
 
     private void sleep() {
         try {
-            Thread.sleep(new Random().nextInt(4) * 1000 + 1);
+            Thread.sleep(new Random().nextInt(4) * 500 + 1);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
