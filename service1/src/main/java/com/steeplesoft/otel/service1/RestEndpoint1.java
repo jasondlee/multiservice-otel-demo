@@ -19,7 +19,13 @@
 
 package com.steeplesoft.otel.service1;
 
-import javax.annotation.Resource;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.Random;
+
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -29,58 +35,87 @@ import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
-import io.opentelemetry.extension.annotations.WithSpan;
+import io.opentelemetry.context.propagation.TextMapSetter;
 
 @Path("/endpoint1")
 public class RestEndpoint1 {
     @Inject
-    private Tracer trace;
+    private Tracer tracer;
     @Inject
     private OpenTelemetry otel;
-    @javax.ws.rs.core.Context
-    private UriInfo uriInfo;
 
 
     @GET
     public String getString() {
-        final Span span = trace.spanBuilder("Doing some work")
-                .setParent(Context.current())
+        final Span span = tracer.spanBuilder("Doing some work")
+//                .setParent(Context.current())
                 .startSpan();
 
         span.makeCurrent();
         span.setAttribute("in.my", "application");
         span.addEvent("Test Event");
-        sleep(2);
+        sleep();
         doSomeMoreWork();
         span.addEvent("After work");
+
+        String service2 = sendRequest();
+        sleep();
         doEvenMoreWork();
+
         span.end();
 
-        return "Hello World, from service 1!";
+        return "Hello World, from service 1! Service 2 happened to say '" + service2 + "'";
     }
 
     private void doSomeMoreWork() {
-        final Span span = trace.spanBuilder("Doing some more work")
-                .setParent(Context.current())
+        final Span span = tracer.spanBuilder("Doing some more work")
+//                .setParent(Context.current())
                 .startSpan();
         span.makeCurrent();
-        sleep(1);
+        sleep();
         doEvenMoreWork();
         span.end();
     }
 
     private void doEvenMoreWork() {
-        final Span span = trace.spanBuilder("Doing even more work")
-                .setParent(Context.current())
+        final Span span = tracer.spanBuilder("Doing even more work")
+//                .setParent(Context.current())
                 .startSpan();
         span.makeCurrent();
-        sleep(8);
+        sleep();
         span.end();
     }
 
-    private void sleep(int seconds) {
+    private HttpClient getClient() {
+        return HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .build();
+    }
+
+    private String sendRequest() {
+        TextMapSetter<HttpRequest.Builder> setter =
+                (requestBuilder, key, value) -> {
+                    requestBuilder.header (key, value);
+                };
+
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/service2-1.0-SNAPSHOT/api/endpoint2"))
+                .timeout(Duration.ofMinutes(1))
+                .header("Content-Type", "application/json")
+                .GET();
+        otel.getPropagators().getTextMapPropagator().inject(Context.current(), builder, setter);
+        final HttpRequest request = builder.build();
         try {
-            Thread.sleep(/*seconds * */1000);
+            HttpResponse<String> response = getClient().send(request, HttpResponse.BodyHandlers.ofString());
+            return response.body();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void sleep() {
+        try {
+            Thread.sleep(new Random().nextInt(4) * 1000 + 1);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

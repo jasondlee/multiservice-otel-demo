@@ -31,6 +31,7 @@ import javax.ws.rs.core.UriInfo;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
@@ -43,48 +44,44 @@ public class OtelRequestFilter implements ContainerRequestFilter, ContainerRespo
     @Inject
     private Tracer tracer;
 
-    private TextMapGetter<ContainerRequestContext> getter =
-            new TextMapGetter<>() {
-                @Override
-                public String get(ContainerRequestContext requestContext, String key) {
-                    if (requestContext.getHeaders().containsKey(key)) {
-                        return requestContext.getHeaders().get(key).get(0);
-                    }
-                    return null;
-                }
-
-                @Override
-                public Iterable<String> keys(ContainerRequestContext requestContext) {
-                    return requestContext.getHeaders().keySet();
-                }
-            };
-
     @Override
     public void filter(ContainerRequestContext requestContext) {
         System.out.println("In request filter...");
-//        final boolean remoteContext = requestContext.getHeaders().keySet().stream().anyMatch(k -> W3CTraceContextPropagator.getInstance().fields().contains(k));
-//
-//        if (remoteContext)
-        {
-            Context extractedContext = otel.getPropagators().getTextMapPropagator()
-                    .extract(Context.current(), requestContext, getter);
-            final UriInfo uriInfo = requestContext.getUriInfo();
-            final URI requestUri = uriInfo.getRequestUri();
-            final String method = requestContext.getMethod();
-            final String uri = uriInfo.getPath();
+        TextMapGetter<ContainerRequestContext> getter =
+                new TextMapGetter<>() {
+                    @Override
+                    public String get(ContainerRequestContext requestContext, String key) {
+                        if (requestContext.getHeaders().containsKey(key)) {
+                            return requestContext.getHeaders().get(key).get(0);
+                        }
+                        return null;
+                    }
 
-            Span serverSpan = tracer.spanBuilder(method + " " + uri)
-//                                .setSpanKind(SpanKind.SERVER)
-                    .setParent(extractedContext)
-                    .startSpan();
-            serverSpan.makeCurrent();
-            serverSpan.setAttribute(SemanticAttributes.HTTP_METHOD, method);
-            serverSpan.setAttribute(SemanticAttributes.HTTP_SCHEME, requestUri.getScheme());
-            serverSpan.setAttribute(SemanticAttributes.HTTP_HOST, requestUri.getHost() + ":" + requestUri.getPort());
-            serverSpan.setAttribute(SemanticAttributes.HTTP_TARGET, uri);
+                    @Override
+                    public Iterable<String> keys(ContainerRequestContext requestContext) {
+                        return requestContext.getHeaders().keySet();
+                    }
+                };
 
-            requestContext.setProperty("span", serverSpan);
-        }
+        Context extractedContext = otel.getPropagators()
+                .getTextMapPropagator()
+                .extract(Context.current(), requestContext, getter);
+        final UriInfo uriInfo = requestContext.getUriInfo();
+        final URI requestUri = uriInfo.getRequestUri();
+        final String method = requestContext.getMethod();
+        final String uri = uriInfo.getPath();
+
+        Span serverSpan = tracer.spanBuilder(method + " " + uri)
+                .setSpanKind(SpanKind.SERVER)
+                .setParent(extractedContext)
+                .startSpan();
+        serverSpan.makeCurrent();
+        serverSpan.setAttribute(SemanticAttributes.HTTP_METHOD, method);
+        serverSpan.setAttribute(SemanticAttributes.HTTP_SCHEME, requestUri.getScheme());
+        serverSpan.setAttribute(SemanticAttributes.HTTP_HOST, requestUri.getHost() + ":" + requestUri.getPort());
+        serverSpan.setAttribute(SemanticAttributes.HTTP_TARGET, uri);
+
+        requestContext.setProperty("span", serverSpan);
     }
 
     @Override

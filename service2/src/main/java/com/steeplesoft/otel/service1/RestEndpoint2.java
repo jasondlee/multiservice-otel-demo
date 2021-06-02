@@ -19,7 +19,8 @@
 
 package com.steeplesoft.otel.service1;
 
-import javax.annotation.Resource;
+import java.util.Random;
+
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -28,59 +29,41 @@ import javax.ws.rs.core.UriInfo;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.context.Context;
-import io.opentelemetry.extension.annotations.WithSpan;
 
 @Path("/endpoint2")
 public class RestEndpoint2 {
     @Inject
-    private Tracer trace;
+    private Tracer tracer;
     @Inject
     private OpenTelemetry otel;
-    @javax.ws.rs.core.Context
-    private UriInfo uriInfo;
-
 
     @GET
     public String getString() {
-        final Span span = trace.spanBuilder("Doing some work")
-                .setParent(Context.current())
+        final Span span = tracer.spanBuilder("In service 2 doing some work.")
+//                .setParent(Context.current())
                 .startSpan();
 
         span.makeCurrent();
-        span.setAttribute("in.my", "application");
-        span.addEvent("Test Event");
-        sleep(2);
+        span.addEvent("Service 2 has been called");
+        sleep();
         doSomeMoreWork();
-        span.addEvent("After work");
-        doEvenMoreWork();
         span.end();
 
-        return "Hello World, from service 2!";
+        return "Service 2 did something!";
     }
 
     private void doSomeMoreWork() {
-        final Span span = trace.spanBuilder("Doing some more work")
-                .setParent(Context.current())
+        final Span span = tracer.spanBuilder("In Service 2, doing some more work")
+//                .setParent(Context.current())
                 .startSpan();
         span.makeCurrent();
-        sleep(1);
-        doEvenMoreWork();
+        sleep();
         span.end();
     }
 
-    private void doEvenMoreWork() {
-        final Span span = trace.spanBuilder("Doing even more work")
-                .setParent(Context.current())
-                .startSpan();
-        span.makeCurrent();
-        sleep(8);
-        span.end();
-    }
-
-    private void sleep(int seconds) {
+    private void sleep() {
         try {
-            Thread.sleep(/*seconds * */1000);
+            Thread.sleep(new Random().nextInt(4) * 1000 + 1);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
