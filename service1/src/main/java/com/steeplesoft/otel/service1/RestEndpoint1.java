@@ -56,7 +56,7 @@ public class RestEndpoint1 {
         doEvenMoreWork();
         span.end();
 
-        return "Hello World, from Jakarta EE 9.1!";
+        return "Hello World, from service 1!";
     }
 
     private void doSomeMoreWork() {
