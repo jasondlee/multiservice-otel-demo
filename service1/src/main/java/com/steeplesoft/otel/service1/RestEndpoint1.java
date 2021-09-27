@@ -90,11 +90,13 @@ public class RestEndpoint1 {
 
     private String sendRequest() {
         Client client = ClientBuilder.newClient();
-        return client
+        String response = client
                 .target("http://localhost:8080/service2-1.0-SNAPSHOT/endpoint2")
                 .request(MediaType.TEXT_PLAIN)
                 .get()
                 .readEntity(String.class);
+        client.close();
+        return response;
     }
 
 }
