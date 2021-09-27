@@ -19,29 +19,26 @@
 
 package com.steeplesoft.otel.service1;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.Random;
-
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.context.Context;
-import io.opentelemetry.context.propagation.TextMapSetter;
 
 @Path("/endpoint1")
 public class RestEndpoint1 {
     @Inject
-    private Tracer tracer;
+    private OpenTelemetry openTelemetry;
+
     @Inject
-    private OpenTelemetry otel;
+    private Tracer tracer;
 
     @GET
     public String method1() {
@@ -51,24 +48,35 @@ public class RestEndpoint1 {
         span.makeCurrent();
         span.setAttribute("in.my", "application");
         span.addEvent("Test Event");
-        sleep();
         doSomeMoreWork();
         span.addEvent("After work");
 
         String service2 = sendRequest();
-        sleep();
         doEvenMoreWork();
 
         span.end();
 
-        return "Hello World, from service 1! Service 2 happened to say '" + service2 + "'";
+        String result = "Hello World, from service 1! Service 2 happened to say '" + service2 + "'. ";
+
+
+        final OpenTelemetry glotel = GlobalOpenTelemetry.get();
+        final Tracer glotel_test = glotel.getTracer("glotel test");
+        final Span span1 = glotel_test.spanBuilder("foo")
+                .setAttribute("dummy", "test").startSpan();
+        span1.makeCurrent();
+        span1.addEvent("test event");
+        span1.end();
+
+        result += "\nInjected otel hash = " + this.openTelemetry.hashCode() + ". Global hash = " +
+                glotel.hashCode();
+        result += "\nInjected tracer hash = " + this.tracer.hashCode() + ".";
+        return result;
     }
 
     private void doSomeMoreWork() {
         final Span span = tracer.spanBuilder("Doing some more work")
                 .startSpan();
         span.makeCurrent();
-        sleep();
         doEvenMoreWork();
         span.end();
     }
@@ -77,39 +85,16 @@ public class RestEndpoint1 {
         final Span span = tracer.spanBuilder("Doing even more work")
                 .startSpan();
         span.makeCurrent();
-        sleep();
         span.end();
     }
 
     private String sendRequest() {
-        TextMapSetter<HttpRequest.Builder> setter =
-                (requestBuilder, key, value) -> {
-                    requestBuilder.header (key, value);
-                };
-
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/service2-1.0-SNAPSHOT/api/endpoint2"))
-                .timeout(Duration.ofMinutes(1))
-                .header("Content-Type", "application/json")
-                .GET();
-        otel.getPropagators().getTextMapPropagator().inject(Context.current(), builder, setter);
-        final HttpRequest request = builder.build();
-        try {
-            HttpResponse<String> response = HttpClient.newBuilder()
-                    .version(HttpClient.Version.HTTP_2)
-                    .build()
-                    .send(request, HttpResponse.BodyHandlers.ofString());
-            return response.body();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        Client client = ClientBuilder.newClient();
+        return client
+                .target("http://localhost:8080/service2-1.0-SNAPSHOT/endpoint2")
+                .request(MediaType.TEXT_PLAIN)
+                .get()
+                .readEntity(String.class);
     }
 
-    private void sleep() {
-        try {
-            Thread.sleep(new Random().nextInt(4) * 500 + 1);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
 }

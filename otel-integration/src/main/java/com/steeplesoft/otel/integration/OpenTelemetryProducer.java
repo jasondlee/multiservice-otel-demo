@@ -66,8 +66,7 @@ public class OpenTelemetryProducer {
         final SdkTracerProviderBuilder tracerProviderBuilder = SdkTracerProvider.builder()
                 .addSpanProcessor(spanProcessorBuilder.build())
                 .setResource(Resource.create(Attributes.of(
-                        ResourceAttributes.SERVICE_NAME, applicationName,
-                        AttributeKey.stringKey("foo"), "bar")));
+                        ResourceAttributes.SERVICE_NAME, applicationName)));
 
         return OpenTelemetrySdk.builder()
                 .setTracerProvider(tracerProviderBuilder.build())

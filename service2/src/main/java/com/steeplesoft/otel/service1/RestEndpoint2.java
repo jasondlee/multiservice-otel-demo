@@ -24,6 +24,7 @@ import java.util.Random;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.client.Client;
 import javax.ws.rs.core.UriInfo;
 
 import io.opentelemetry.api.OpenTelemetry;
@@ -34,6 +35,8 @@ import io.opentelemetry.api.trace.Tracer;
 public class RestEndpoint2 {
     @Inject
     private Tracer tracer;
+    @Inject
+    private Client client;
 
     @GET
     public String method2() {
@@ -41,6 +44,7 @@ public class RestEndpoint2 {
                 .startSpan();
 
         span.makeCurrent();
+        printSpan(span);
         span.addEvent("Service 2 has been called");
         sleep();
         doSomeMoreWork();
@@ -53,15 +57,20 @@ public class RestEndpoint2 {
         final Span span = tracer.spanBuilder("In Service 2, doing some more work")
                 .startSpan();
         span.makeCurrent();
+        printSpan(span);
         sleep();
         span.end();
     }
 
     private void sleep() {
-        try {
-            Thread.sleep(new Random().nextInt(4) * 500 + 1);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            Thread.sleep(new Random().nextInt(4) * 500 + 1);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+    }
+
+    private void printSpan(Span serverSpan) {
+//        System.out.println("\n\n\nspan = " + serverSpan);
     }
 }
