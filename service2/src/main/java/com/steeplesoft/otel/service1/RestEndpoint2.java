@@ -20,14 +20,10 @@
 package com.steeplesoft.otel.service1;
 
 import java.util.Random;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 
-import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.core.UriInfo;
-
-import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 
@@ -35,9 +31,6 @@ import io.opentelemetry.api.trace.Tracer;
 public class RestEndpoint2 {
     @Inject
     private Tracer tracer;
-    @Inject
-    private Client client;
-
     @GET
     public String method2() {
         final Span span = tracer.spanBuilder("In service 2 doing some work.")
@@ -63,11 +56,11 @@ public class RestEndpoint2 {
     }
 
     private void sleep() {
-//        try {
-//            Thread.sleep(new Random().nextInt(4) * 500 + 1);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            Thread.sleep(new Random().nextInt(4) * 500 + 1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void printSpan(Span serverSpan) {

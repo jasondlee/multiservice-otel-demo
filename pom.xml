@@ -10,9 +10,10 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>otel-integration</module>
+<!--        <module>otel-integration</module>-->
         <module>service1</module>
         <module>service2</module>
+        <module>service3</module>
     </modules>
 
     <properties>
@@ -26,7 +27,7 @@
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-bom</artifactId>
-                <version>1.5.0</version>
+                <version>1.19.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -37,14 +38,24 @@
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
             <artifactId>jakarta.ws.rs-api</artifactId>
-            <version>2.1.6</version>
+            <version>3.1.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
-            <version>2.0.2</version>
+            <version>4.0.1</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.3.2</version>
+            </plugin>
+        </plugins>
+    </build>
 </project>

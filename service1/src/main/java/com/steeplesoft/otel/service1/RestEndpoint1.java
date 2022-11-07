@@ -19,15 +19,13 @@
 
 package com.steeplesoft.otel.service1;
 
-import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.core.MediaType;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
@@ -42,6 +40,7 @@ public class RestEndpoint1 {
 
     @GET
     public String method1() {
+
         final Span span = tracer.spanBuilder("Doing some work")
                 .startSpan();
 
@@ -56,21 +55,7 @@ public class RestEndpoint1 {
 
         span.end();
 
-        String result = "Hello World, from service 1! Service 2 happened to say '" + service2 + "'. ";
-
-
-        final OpenTelemetry glotel = GlobalOpenTelemetry.get();
-        final Tracer glotel_test = glotel.getTracer("glotel test");
-        final Span span1 = glotel_test.spanBuilder("foo")
-                .setAttribute("dummy", "test").startSpan();
-        span1.makeCurrent();
-        span1.addEvent("test event");
-        span1.end();
-
-        result += "\nInjected otel hash = " + this.openTelemetry.hashCode() + ". Global hash = " +
-                glotel.hashCode();
-        result += "\nInjected tracer hash = " + this.tracer.hashCode() + ".";
-        return result;
+        return "Hello World, from service 1! Service 2 happened to say '" + service2 + "'. ";
     }
 
     private void doSomeMoreWork() {

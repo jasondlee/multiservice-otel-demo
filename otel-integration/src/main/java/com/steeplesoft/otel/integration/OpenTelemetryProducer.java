@@ -19,8 +19,8 @@
 
 package com.steeplesoft.otel.integration;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
@@ -39,7 +39,7 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 
 @ApplicationScoped
 public class OpenTelemetryProducer {
-    @javax.annotation.Resource(lookup="java:app/AppName")
+    @jakarta.annotation.Resource(lookup="java:app/AppName")
     private String applicationName;
 
     private volatile OpenTelemetry openTelemetry;
@@ -74,5 +74,3 @@ public class OpenTelemetryProducer {
                 .buildAndRegisterGlobal();
     }
 }
-
-
